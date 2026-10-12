@@ -1,1 +1,38 @@
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.Scanner;
 
+public class Actividad1_InformacionArchivo {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Ingrese la ruta de un archivo o directorio: ");
+        Path ruta = Paths.get(sc.nextLine());
+
+        try {
+            System.out.println("Nombre: " + ruta.getFileName());
+            System.out.println("Es directorio: " + Files.isDirectory(ruta));
+            System.out.println("Es ruta absoluta: " + ruta.isAbsolute());
+            System.out.println("Última modificación: " + Files.getLastModifiedTime(ruta));
+            System.out.println("Ruta absoluta: " + ruta.toAbsolutePath());
+
+            if (Files.isRegularFile(ruta)) {
+                System.out.println("Tamaño: " + Files.size(ruta) + " bytes");
+            }
+
+            if (Files.isDirectory(ruta)) {
+                System.out.println("Contenido del directorio:");
+
+                try (DirectoryStream<Path> contenido = Files.newDirectoryStream(ruta)) {
+                    for (Path archivo : contenido) {
+                        System.out.println(archivo.getFileName());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
+        sc.close();
+    }
+}
