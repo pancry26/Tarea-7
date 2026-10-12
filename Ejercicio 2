@@ -1,1 +1,322 @@
 
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    static class Personaje {
+        String nombre;
+        int vida, ataque, defensa, alcance, nivel = 1;
+
+        Personaje(String nombre, int vida, int ataque,
+                  int defensa, int alcance) {
+            if (nombre.trim().isEmpty() || vida <= 0 || ataque <= 0
+                    || defensa <= 0 || alcance <= 0) {
+                throw new IllegalArgumentException("Datos inválidos.");
+            }
+            this.nombre = nombre;
+            this.vida = vida;
+            this.ataque = ataque;
+            this.defensa = defensa;
+            this.alcance = alcance;
+        }
+
+        String guardar() {
+            return nombre + ";" + vida + ";" + ataque + ";"
+                    + defensa + ";" + alcance + ";" + nivel;
+        }
+
+        public String toString() {
+            return nombre + " | Nivel: " + nivel + " | Vida: " + vida
+                    + " | Ataque: " + ataque + " | Defensa: "
+                    + defensa + " | Alcance: " + alcance;
+        }
+    }
+
+    static class Gestor {
+        List<Personaje> lista = new ArrayList<>();
+        final String archivo = "personajes.txt";
+
+        Gestor() {
+            cargar();
+        }
+
+        Personaje buscar(String nombre) {
+            for (Personaje p : lista) {
+                if (p.nombre.equalsIgnoreCase(nombre)) return p;
+            }
+            return null;
+        }
+
+        void cargar() {
+            File f = new File(archivo);
+            if (!f.exists()) return;
+
+            try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                String linea;
+
+                while ((linea = br.readLine()) != null) {
+                    try {
+                        String[] d = linea.split(";");
+                        if (d.length < 5) continue;
+
+                        Personaje p = new Personaje(d[0],
+                                Integer.parseInt(d[1]),
+                                Integer.parseInt(d[2]),
+                                Integer.parseInt(d[3]),
+                                Integer.parseInt(d[4]));
+
+                        if (d.length > 5) p.nivel = Integer.parseInt(d[5]);
+                        if (buscar(p.nombre) == null) lista.add(p);
+                    } catch (RuntimeException e) {
+                        System.out.println("Registro inválido omitido.");
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+
+        void guardar() {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+                for (Personaje p : lista) pw.println(p.guardar());
+            } catch (IOException e) {
+                System.out.println("Error al guardar: " + e.getMessage());
+            }
+        }
+
+        void agregar(Personaje p) {
+            if (buscar(p.nombre) != null) {
+                System.out.println("El personaje ya existe.");
+                return;
+            }
+            lista.add(p);
+            guardar();
+            System.out.println("Personaje agregado.");
+        }
+
+        void predefinidos() {
+            agregarSiNuevo(new Personaje("Guerrero", 150, 30, 25, 5));
+            agregarSiNuevo(new Personaje("Mago", 80, 50, 10, 12));
+            agregarSiNuevo(new Personaje("Arquero", 100, 35, 15, 20));
+            guardar();
+            System.out.println("Personajes predefinidos cargados.");
+        }
+
+        void agregarSiNuevo(Personaje p) {
+            if (buscar(p.nombre) == null) lista.add(p);
+        }
+
+        void listar() {
+            if (lista.isEmpty()) {
+                System.out.println("No hay personajes.");
+                return;
+            }
+            for (Personaje p : lista) System.out.println(p);
+        }
+
+        void ordenar(String atributo) {
+            Comparator<Personaje> comparador;
+
+            switch (atributo.toLowerCase()) {
+                case "vida":
+                    comparador = Comparator.comparingInt(p -> p.vida);
+                    break;
+                case "ataque":
+                    comparador = Comparator.comparingInt(p -> p.ataque);
+                    break;
+                case "defensa":
+                    comparador = Comparator.comparingInt(p -> p.defensa);
+                    break;
+                case "alcance":
+                    comparador = Comparator.comparingInt(p -> p.alcance);
+                    break;
+                default:
+                    System.out.println("Atributo inválido.");
+                    return;
+            }
+
+            lista.sort(comparador.reversed());
+            listar();
+        }
+
+        void actualizar(String nombre, String atributo, int valor) {
+            Personaje p = buscar(nombre);
+
+            if (p == null || valor <= 0) {
+                System.out.println("Personaje inexistente o valor inválido.");
+                return;
+            }
+
+            switch (atributo.toLowerCase()) {
+                case "vida": p.vida = valor; break;
+                case "ataque": p.ataque = valor; break;
+                case "defensa": p.defensa = valor; break;
+                case "alcance": p.alcance = valor; break;
+                default:
+                    System.out.println("Atributo inválido.");
+                    return;
+            }
+
+            guardar();
+            System.out.println("Atributo actualizado.");
+        }
+
+        void estadisticas() {
+            if (lista.isEmpty()) {
+                System.out.println("No hay personajes registrados.");
+                return;
+            }
+
+            double vida = 0, ataque = 0, defensa = 0, alcance = 0;
+
+            for (Personaje p : lista) {
+                vida += p.vida;
+                ataque += p.ataque;
+                defensa += p.defensa;
+                alcance += p.alcance;
+            }
+
+            int n = lista.size();
+            System.out.println("Total: " + n);
+            System.out.println("Vida promedio: " + vida / n);
+            System.out.println("Ataque promedio: " + ataque / n);
+            System.out.println("Defensa promedio: " + defensa / n);
+            System.out.println("Alcance promedio: " + alcance / n);
+        }
+
+        void importar(String ruta) {
+            int agregados = 0;
+
+            try (BufferedReader br = new BufferedReader(new FileReader(ruta))) {
+                String linea;
+
+                while ((linea = br.readLine()) != null) {
+                    try {
+                        String[] d = linea.split(";");
+                        if (d.length < 5) continue;
+
+                        Personaje p = new Personaje(d[0],
+                                Integer.parseInt(d[1]),
+                                Integer.parseInt(d[2]),
+                                Integer.parseInt(d[3]),
+                                Integer.parseInt(d[4]));
+
+                        if (buscar(p.nombre) == null) {
+                            lista.add(p);
+                            agregados++;
+                        }
+                    } catch (RuntimeException e) {
+                        System.out.println("Registro inválido omitido.");
+                    }
+                }
+
+                guardar();
+                System.out.println("Personajes importados: " + agregados);
+
+            } catch (IOException e) {
+                System.out.println("Error al importar: " + e.getMessage());
+            }
+        }
+
+        void subirNivel(String nombre) {
+            Personaje p = buscar(nombre);
+
+            if (p == null) {
+                System.out.println("Personaje no encontrado.");
+                return;
+            }
+
+            p.nivel++;
+            p.vida += 10;
+            p.ataque += 5;
+            p.defensa += 3;
+            p.alcance += 1;
+
+            guardar();
+            System.out.println("Nivel aumentado: " + p);
+        }
+    }
+
+    static int entero(Scanner sc, String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            try {
+                return Integer.parseInt(sc.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Ingrese un entero válido.");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        Gestor g = new Gestor();
+        int op;
+
+        do {
+            System.out.println("\n1. Agregar personaje");
+            System.out.println("2. Listar personajes");
+            System.out.println("3. Ordenar por atributo");
+            System.out.println("4. Cargar predefinidos");
+            System.out.println("5. Actualizar atributo");
+            System.out.println("6. Mostrar estadísticas");
+            System.out.println("7. Importar desde archivo");
+            System.out.println("8. Subir nivel");
+            System.out.println("9. Salir");
+
+            op = entero(sc, "Opción: ");
+
+            try {
+                switch (op) {
+                    case 1:
+                        System.out.print("Nombre: ");
+                        String n = sc.nextLine();
+                        int v = entero(sc, "Vida: ");
+                        int a = entero(sc, "Ataque: ");
+                        int d = entero(sc, "Defensa: ");
+                        int al = entero(sc, "Alcance: ");
+                        g.agregar(new Personaje(n, v, a, d, al));
+                        break;
+                    case 2:
+                        g.listar();
+                        break;
+                    case 3:
+                        System.out.print("Atributo (vida/ataque/defensa/alcance): ");
+                        g.ordenar(sc.nextLine());
+                        break;
+                    case 4:
+                        g.predefinidos();
+                        break;
+                    case 5:
+                        System.out.print("Personaje: ");
+                        n = sc.nextLine();
+                        System.out.print("Atributo: ");
+                        String atr = sc.nextLine();
+                        v = entero(sc, "Nuevo valor: ");
+                        g.actualizar(n, atr, v);
+                        break;
+                    case 6:
+                        g.estadisticas();
+                        break;
+                    case 7:
+                        System.out.print("Ruta del archivo a importar: ");
+                        g.importar(sc.nextLine());
+                        break;
+                    case 8:
+                        System.out.print("Personaje: ");
+                        g.subirNivel(sc.nextLine());
+                        break;
+                    case 9:
+                        System.out.println("Programa finalizado.");
+                        break;
+                    default:
+                        System.out.println("Opción inválida.");
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        } while (op != 9);
+
+        sc.close();
+    }
+}
