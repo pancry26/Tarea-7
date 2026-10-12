@@ -1,1 +1,46 @@
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Scanner;
+
+public class Actividad5_BuscarAgenda {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        try {
+            List<String> lineas = Files.readAllLines(
+                Paths.get("agenda.txt"),
+                StandardCharsets.UTF_8
+            );
+
+            System.out.print("Ingrese el nombre a buscar: ");
+            String buscado = sc.nextLine().trim();
+
+            boolean encontrado = false;
+
+            for (int i = 0; i < lineas.size(); i += 3) {
+                if (lineas.get(i).trim().equalsIgnoreCase(buscado)) {
+                    if (i + 2 < lineas.size()) {
+                        System.out.println("Nombre: " + lineas.get(i));
+                        System.out.println("Teléfono: " + lineas.get(i + 1));
+                        System.out.println("Dirección: " + lineas.get(i + 2));
+                        encontrado = true;
+                    }
+                    break;
+                }
+            }
+
+            if (!encontrado) {
+                System.out.println("Contacto no encontrado.");
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error al leer agenda.txt: " + e.getMessage());
+        }
+
+        sc.close();
+    }
+}
