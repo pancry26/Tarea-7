@@ -1,1 +1,218 @@
 
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    static class Personaje {
+        String nombre;
+        int vida, ataque, defensa, alcance;
+
+        Personaje(String nombre, int vida, int ataque,
+                  int defensa, int alcance) {
+            if (nombre.trim().isEmpty() || vida <= 0 || ataque <= 0
+                    || defensa <= 0 || alcance <= 0) {
+                throw new IllegalArgumentException("Datos inválidos.");
+            }
+
+            this.nombre = nombre;
+            this.vida = vida;
+            this.ataque = ataque;
+            this.defensa = defensa;
+            this.alcance = alcance;
+        }
+
+        public String toString() {
+            return nombre + " | Vida: " + vida + " | Ataque: " + ataque
+                    + " | Defensa: " + defensa + " | Alcance: " + alcance;
+        }
+
+        String guardar() {
+            return nombre + ";" + vida + ";" + ataque
+                    + ";" + defensa + ";" + alcance;
+        }
+    }
+
+    static class Gestor {
+        List<Personaje> personajes = new ArrayList<>();
+        final String archivo = "personajes.txt";
+
+        Gestor() {
+            cargar();
+        }
+
+        void cargar() {
+            File f = new File(archivo);
+            if (!f.exists()) return;
+
+            try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                String linea;
+
+                while ((linea = br.readLine()) != null) {
+                    try {
+                        String[] d = linea.split(";", 5);
+                        if (d.length != 5) continue;
+
+                        Personaje p = new Personaje(d[0],
+                                Integer.parseInt(d[1]),
+                                Integer.parseInt(d[2]),
+                                Integer.parseInt(d[3]),
+                                Integer.parseInt(d[4]));
+
+                        if (buscar(p.nombre) == null) personajes.add(p);
+                    } catch (RuntimeException e) {
+                        System.out.println("Registro inválido omitido.");
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Error al cargar: " + e.getMessage());
+            }
+        }
+
+        void guardar() {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+                for (Personaje p : personajes) pw.println(p.guardar());
+            } catch (IOException e) {
+                System.out.println("Error al guardar: " + e.getMessage());
+            }
+        }
+
+        Personaje buscar(String nombre) {
+            for (Personaje p : personajes) {
+                if (p.nombre.equalsIgnoreCase(nombre)) return p;
+            }
+            return null;
+        }
+
+        void agregar(Personaje p) {
+            if (buscar(p.nombre) != null) {
+                System.out.println("El personaje ya existe.");
+                return;
+            }
+
+            personajes.add(p);
+            guardar();
+            System.out.println("Personaje agregado.");
+        }
+
+        void listar() {
+            if (personajes.isEmpty()) {
+                System.out.println("No hay personajes registrados.");
+                return;
+            }
+
+            for (Personaje p : personajes) System.out.println(p);
+        }
+
+        void modificar(String nombre, int vida, int ataque,
+                       int defensa, int alcance) {
+            Personaje p = buscar(nombre);
+
+            if (p == null) {
+                System.out.println("Personaje no encontrado.");
+                return;
+            }
+
+            if (vida <= 0 || ataque <= 0 || defensa <= 0 || alcance <= 0) {
+                System.out.println("Los atributos deben ser mayores que cero.");
+                return;
+            }
+
+            p.vida = vida;
+            p.ataque = ataque;
+            p.defensa = defensa;
+            p.alcance = alcance;
+            guardar();
+            System.out.println("Personaje modificado.");
+        }
+
+        void eliminar(String nombre) {
+            Personaje p = buscar(nombre);
+
+            if (p == null) {
+                System.out.println("Personaje no encontrado.");
+                return;
+            }
+
+            personajes.remove(p);
+            guardar();
+            System.out.println("Personaje eliminado.");
+        }
+    }
+
+    static int leerEntero(Scanner sc, String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            try {
+                return Integer.parseInt(sc.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Ingrese un número entero.");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        Gestor gestor = new Gestor();
+        int opcion;
+
+        do {
+            System.out.println("\n1. Agregar personaje");
+            System.out.println("2. Mostrar personajes");
+            System.out.println("3. Modificar personaje");
+            System.out.println("4. Eliminar personaje");
+            System.out.println("5. Salir");
+
+            opcion = leerEntero(sc, "Opción: ");
+
+            try {
+                switch (opcion) {
+                    case 1:
+                        System.out.print("Nombre: ");
+                        String nombre = sc.nextLine();
+
+                        int vida = leerEntero(sc, "Vida: ");
+                        int ataque = leerEntero(sc, "Ataque: ");
+                        int defensa = leerEntero(sc, "Defensa: ");
+                        int alcance = leerEntero(sc, "Alcance: ");
+
+                        gestor.agregar(new Personaje(nombre, vida,
+                                ataque, defensa, alcance));
+                        break;
+
+                    case 2:
+                        gestor.listar();
+                        break;
+
+                    case 3:
+                        System.out.print("Nombre del personaje: ");
+                        nombre = sc.nextLine();
+
+                        vida = leerEntero(sc, "Nueva vida: ");
+                        ataque = leerEntero(sc, "Nuevo ataque: ");
+                        defensa = leerEntero(sc, "Nueva defensa: ");
+                        alcance = leerEntero(sc, "Nuevo alcance: ");
+
+                        gestor.modificar(nombre, vida, ataque,
+                                defensa, alcance);
+                        break;
+
+                    case 4:
+                        System.out.print("Nombre del personaje: ");
+                        gestor.eliminar(sc.nextLine());
+                        break;
+
+                    case 5:
+                        System.out.println("Programa finalizado.");
+                        break;
+
+                    default:
+                        System.out.println("Opción inválida.");
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        } while (opcion != 5);
+
+        sc.close();
+    }
+}
