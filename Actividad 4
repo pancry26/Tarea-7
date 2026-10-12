@@ -1,1 +1,46 @@
 
+import java.awt.BorderLayout;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import javax.swing.*;
+
+public class Actividad4_VisualizarArchivo {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame ventana = new JFrame("Visualizar archivo TXT");
+            JTextArea area = new JTextArea();
+            JButton boton = new JButton("Leer archivo");
+
+            area.setEditable(false);
+
+            boton.addActionListener(e -> {
+                try {
+                    String contenido = new String(
+                        Files.readAllBytes(Paths.get("archivo.txt")),
+                        StandardCharsets.UTF_8
+                    );
+
+                    area.setText(contenido);
+
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(
+                        ventana,
+                        "No se pudo leer archivo.txt",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            });
+
+            ventana.add(new JScrollPane(area), BorderLayout.CENTER);
+            ventana.add(boton, BorderLayout.SOUTH);
+
+            ventana.setSize(600, 400);
+            ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventana.setLocationRelativeTo(null);
+            ventana.setVisible(true);
+        });
+    }
+}
