@@ -1,1 +1,108 @@
+import java.awt.GraphicsEnvironment;
+import java.io.*;
+import java.util.*;
+import javax.swing.JFileChooser;
 
+public class Main {
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        File archivo = null;
+
+        // Se repite hasta obtener un archivo válido o hasta que el usuario cancele
+        while (archivo == null) {
+            File candidato = elegirArchivo(sc);
+            if (candidato == null) {
+                System.out.println("Operación cancelada.");
+                return;
+            }
+            if (candidato.exists() && candidato.isFile() && candidato.canRead()) {
+                archivo = candidato;
+            } else {
+                System.out.println("El archivo no existe o es inválido: " + candidato.getPath()
+                        + ". Intente con otro.");
+            }
+        }
+
+        try {
+            analizar(archivo);
+        } catch (IOException e) {
+            System.out.println("Error al leer el archivo: " + e.getMessage());
+        }
+    }
+
+    // Usa JFileChooser si hay entorno gráfico; si no, pide la ruta por consola
+    static File elegirArchivo(Scanner sc) {
+        if (!GraphicsEnvironment.isHeadless()) {
+            JFileChooser selector = new JFileChooser();
+            int r = selector.showOpenDialog(null);
+            return (r == JFileChooser.APPROVE_OPTION) ? selector.getSelectedFile() : null;
+        }
+        System.out.print("Ruta del archivo ('lear' = crear ejemplo, 'salir' = cancelar): ");
+        String ruta = sc.nextLine().trim();
+        if (ruta.equalsIgnoreCase("salir")) return null;
+        if (ruta.equalsIgnoreCase("lear")) return crearEjemplo();
+        return new File(ruta);
+    }
+
+    // Crea lear.txt con el pasaje de "Rey Lear"
+    static File crearEjemplo() {
+        File f = new File("lear.txt");
+        try (PrintWriter pw = new PrintWriter(new FileWriter(f))) {
+            pw.println("Poor naked wretches, wheresoe'er you are,");
+            pw.println("That bide the pelting of this pitiless storm,");
+            pw.println("How shall your houseless heads and unfed sides,");
+            pw.println("Your loop'd and window'd raggedness, defend you");
+            pw.println("From seasons such as these? O, I have ta'en");
+            pw.println("Too little care of this!");
+        } catch (IOException e) {
+            System.out.println("No se pudo crear el archivo de ejemplo: " + e.getMessage());
+        }
+        return f;
+    }
+
+    // Lee el archivo línea por línea y calcula las estadísticas
+    static void analizar(File archivo) throws IOException {
+        int totalLineas = 0, totalPalabras = 0, totalCaracteres = 0;
+        Map<String, Integer> frecuencia = new HashMap<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                totalLineas++;
+                totalCaracteres += linea.length(); // sin contar el fin de línea
+
+                // Una palabra es una secuencia consecutiva de letras y/o dígitos
+                StringBuilder palabra = new StringBuilder();
+                for (int i = 0; i <= linea.length(); i++) {
+                    if (i < linea.length() && Character.isLetterOrDigit(linea.charAt(i))) {
+                        palabra.append(linea.charAt(i));
+                    } else if (palabra.length() > 0) {
+                        String p = palabra.toString().toLowerCase();
+                        frecuencia.merge(p, 1, Integer::sum);
+                        totalPalabras++;
+                        palabra.setLength(0);
+                    }
+                }
+            }
+        }
+
+        System.out.println("\n===== RESULTADOS: " + archivo.getName() + " =====");
+        System.out.println("Total de líneas: " + totalLineas);
+        System.out.println("Total de palabras: " + totalPalabras);
+        System.out.println("Total de caracteres (sin fin de línea): " + totalCaracteres);
+        double promedio = (totalLineas == 0) ? 0 : (double) totalPalabras / totalLineas;
+        System.out.printf("Promedio de palabras por línea: %.2f%n", promedio);
+
+        // Palabras más frecuentes (mayor a menor, empate por orden alfabético)
+        List<Map.Entry<String, Integer>> lista = new ArrayList<>(frecuencia.entrySet());
+        lista.sort((a, b) -> {
+            int c = b.getValue().compareTo(a.getValue());
+            return (c != 0) ? c : a.getKey().compareTo(b.getKey());
+        });
+        System.out.println("Palabras más frecuentes:");
+        for (int i = 0; i < Math.min(5, lista.size()); i++) {
+            System.out.println("  " + lista.get(i).getKey() + " -> " + lista.get(i).getValue());
+        }
+    }
+}
