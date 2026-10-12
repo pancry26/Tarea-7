@@ -1,1 +1,211 @@
+import java.io.*;
+import java.util.*;
 
+public class Main {
+    static class Empleado {
+        private int numero;
+        private String nombre;
+        private double sueldo;
+
+        Empleado(int numero, String nombre, double sueldo) {
+            if (numero <= 0 || nombre.trim().isEmpty() || sueldo < 0) {
+                throw new IllegalArgumentException("Datos inválidos.");
+            }
+            this.numero = numero;
+            this.nombre = nombre;
+            this.sueldo = sueldo;
+        }
+
+        int getNumero() { return numero; }
+        String getNombre() { return nombre; }
+        double getSueldo() { return sueldo; }
+
+        void setNombre(String nombre) {
+            if (nombre == null || nombre.trim().isEmpty())
+                throw new IllegalArgumentException("Nombre inválido.");
+            this.nombre = nombre;
+        }
+
+        void setSueldo(double sueldo) {
+            if (sueldo < 0) throw new IllegalArgumentException("Sueldo inválido.");
+            this.sueldo = sueldo;
+        }
+
+        public String toString() {
+            return "Número: " + numero + " | Nombre: " + nombre
+                    + " | Sueldo: S/ " + String.format("%.2f", sueldo);
+        }
+
+        String guardar() {
+            return numero + ";" + nombre + ";" + sueldo;
+        }
+    }
+
+    static class Modelo {
+        final String archivo = "empleados.txt";
+
+        List<Empleado> leerEmpleados() {
+            List<Empleado> lista = new ArrayList<>();
+            File f = new File(archivo);
+            if (!f.exists()) return lista;
+
+            try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                String linea;
+
+                while ((linea = br.readLine()) != null) {
+                    try {
+                        String[] d = linea.split(";", 3);
+                        if (d.length == 3) {
+                            lista.add(new Empleado(
+                                    Integer.parseInt(d[0]),
+                                    d[1],
+                                    Double.parseDouble(d[2])));
+                        }
+                    } catch (RuntimeException e) {
+                        System.out.println("Registro inválido omitido.");
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Error de lectura: " + e.getMessage());
+            }
+
+            return lista;
+        }
+
+        void guardarTodos(List<Empleado> lista) throws IOException {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+                for (Empleado e : lista) pw.println(e.guardar());
+            }
+        }
+
+        void agregarEmpleado(Empleado nuevo) {
+            List<Empleado> lista = leerEmpleados();
+
+            if (buscarEmpleado(nuevo.getNumero()) != null) {
+                System.out.println("Ya existe ese número de empleado.");
+                return;
+            }
+
+            lista.add(nuevo);
+
+            try {
+                guardarTodos(lista);
+                System.out.println("Empleado agregado correctamente.");
+            } catch (IOException e) {
+                System.out.println("Error al guardar: " + e.getMessage());
+            }
+        }
+
+        Empleado buscarEmpleado(int numero) {
+            for (Empleado e : leerEmpleados()) {
+                if (e.getNumero() == numero) return e;
+            }
+            return null;
+        }
+
+        void eliminarEmpleado(int numero) {
+            List<Empleado> lista = leerEmpleados();
+            boolean eliminado = lista.removeIf(e -> e.getNumero() == numero);
+
+            if (!eliminado) {
+                System.out.println("Empleado no encontrado.");
+                return;
+            }
+
+            try {
+                guardarTodos(lista);
+                System.out.println("Empleado eliminado correctamente.");
+            } catch (IOException e) {
+                System.out.println("Error al actualizar archivo: " + e.getMessage());
+            }
+        }
+    }
+
+    static class Vista {
+        Scanner sc = new Scanner(System.in);
+
+        int menu() {
+            System.out.println("\n1. Listar empleados");
+            System.out.println("2. Agregar empleado");
+            System.out.println("3. Buscar empleado");
+            System.out.println("4. Eliminar empleado");
+            System.out.println("5. Salir");
+            System.out.print("Opción: ");
+
+            try {
+                return Integer.parseInt(sc.nextLine());
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+
+        int leerNumero() {
+            System.out.print("Número: ");
+            return Integer.parseInt(sc.nextLine());
+        }
+
+        String leerNombre() {
+            System.out.print("Nombre: ");
+            return sc.nextLine();
+        }
+
+        double leerSueldo() {
+            System.out.print("Sueldo: ");
+            return Double.parseDouble(sc.nextLine());
+        }
+
+        void mostrar(String mensaje) {
+            System.out.println(mensaje);
+        }
+    }
+
+    static class Controlador {
+        Modelo modelo = new Modelo();
+        Vista vista = new Vista();
+
+        void iniciar() {
+            int op = 0;
+
+            do {
+                try {
+                    op = vista.menu();
+
+                    switch (op) {
+                        case 1:
+                            List<Empleado> lista = modelo.leerEmpleados();
+                            if (lista.isEmpty()) vista.mostrar("No hay empleados.");
+                            for (Empleado e : lista) vista.mostrar(e.toString());
+                            break;
+                        case 2:
+                            modelo.agregarEmpleado(new Empleado(
+                                    vista.leerNumero(),
+                                    vista.leerNombre(),
+                                    vista.leerSueldo()));
+                            break;
+                        case 3:
+                            Empleado e = modelo.buscarEmpleado(vista.leerNumero());
+                            vista.mostrar(e == null
+                                    ? "Empleado no encontrado." : e.toString());
+                            break;
+                        case 4:
+                            modelo.eliminarEmpleado(vista.leerNumero());
+                            break;
+                        case 5:
+                            vista.mostrar("Programa finalizado.");
+                            break;
+                        default:
+                            vista.mostrar("Opción inválida.");
+                    }
+                } catch (NumberFormatException e) {
+                    vista.mostrar("Ingrese un número válido.");
+                } catch (IllegalArgumentException e) {
+                    vista.mostrar("Datos inválidos: " + e.getMessage());
+                }
+            } while (op != 5);
+        }
+    }
+
+    public static void main(String[] args) {
+        new Controlador().iniciar();
+    }
+}
