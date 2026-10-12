@@ -1,1 +1,90 @@
 
+import java.io.*;
+
+class Fecha implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    int dia;
+    int mes;
+    int anio;
+
+    Fecha(int dia, int mes, int anio) {
+        this.dia = dia;
+        this.mes = mes;
+        this.anio = anio;
+    }
+
+    public String toString() {
+        return dia + "/" + mes + "/" + anio;
+    }
+}
+
+class Persona implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    String nombre;
+    int edad;
+
+    Persona(String nombre, int edad) {
+        this.nombre = nombre;
+        this.edad = edad;
+    }
+}
+
+class Alumno extends Persona {
+    private static final long serialVersionUID = 1L;
+
+    String carrera;
+    Fecha fechaIngreso;
+
+    Alumno(String nombre, int edad, String carrera, Fecha fechaIngreso) {
+        super(nombre, edad);
+        this.carrera = carrera;
+        this.fechaIngreso = fechaIngreso;
+    }
+
+    public String toString() {
+        return "Nombre: " + nombre
+            + ", Edad: " + edad
+            + ", Carrera: " + carrera
+            + ", Fecha de ingreso: " + fechaIngreso;
+    }
+}
+
+public class Actividad6_Serializacion {
+    public static void main(String[] args) {
+        Alumno[] alumnos = {
+            new Alumno("Ana", 19, "Ingeniería de Sistemas",
+                new Fecha(10, 3, 2026)),
+            new Alumno("Luis", 20, "Ingeniería de Sistemas",
+                new Fecha(12, 3, 2026)),
+            new Alumno("Maria", 18, "Ingeniería de Sistemas",
+                new Fecha(15, 3, 2026))
+        };
+
+        try (ObjectOutputStream salida = new ObjectOutputStream(
+                new FileOutputStream("alumnos.dat"))) {
+
+            for (Alumno alumno : alumnos) {
+                salida.writeObject(alumno);
+            }
+
+            System.out.println("Objetos guardados correctamente.");
+
+        } catch (IOException e) {
+            System.out.println("Error al guardar: " + e.getMessage());
+        }
+
+        try (ObjectInputStream entrada = new ObjectInputStream(
+                new FileInputStream("alumnos.dat"))) {
+
+            for (int i = 0; i < 3; i++) {
+                Alumno alumno = (Alumno) entrada.readObject();
+                System.out.println(alumno);
+            }
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error al leer: " + e.getMessage());
+        }
+    }
+}
