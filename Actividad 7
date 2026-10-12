@@ -1,1 +1,52 @@
 
+import java.io.IOException;
+import java.nio.file.*;
+import javax.swing.*;
+
+public class Actividad7_SeleccionarRuta {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFileChooser selector = new JFileChooser();
+
+            selector.setFileSelectionMode(
+                JFileChooser.FILES_AND_DIRECTORIES
+            );
+
+            int resultado = selector.showOpenDialog(null);
+
+            if (resultado == JFileChooser.APPROVE_OPTION) {
+                Path ruta = selector.getSelectedFile().toPath();
+
+                try {
+                    System.out.println("Nombre: " + ruta.getFileName());
+                    System.out.println("Es directorio: " + Files.isDirectory(ruta));
+                    System.out.println("Es ruta absoluta: " + ruta.isAbsolute());
+                    System.out.println("Ruta absoluta: " + ruta.toAbsolutePath());
+                    System.out.println("Última modificación: "
+                        + Files.getLastModifiedTime(ruta));
+
+                    if (Files.isRegularFile(ruta)) {
+                        System.out.println("Tamaño: "
+                            + Files.size(ruta) + " bytes");
+                    }
+
+                    if (Files.isDirectory(ruta)) {
+                        System.out.println("Contenido:");
+
+                        try (DirectoryStream<Path> contenido =
+                                Files.newDirectoryStream(ruta)) {
+                            for (Path archivo : contenido) {
+                                System.out.println(archivo.getFileName());
+                            }
+                        }
+                    }
+
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(
+                        null, "Error: " + e.getMessage()
+                    );
+                }
+            }
+        });
+    }
+}
